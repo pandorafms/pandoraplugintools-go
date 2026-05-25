@@ -3,36 +3,24 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	ppttransfer "github.com/pandorafms/pandoraplugintools-go/pkg/transfer"
 )
 
 func main() {
-	stagingDir, err := os.MkdirTemp("", "ppt-send-local-staging-")
-	if err != nil {
-		panic(err)
-	}
-	defer os.RemoveAll(stagingDir)
-
-	inboxDir, err := os.MkdirTemp("", "ppt-send-local-inbox-")
-	if err != nil {
-		panic(err)
-	}
-	defer os.RemoveAll(inboxDir)
-
-	file, err := ppttransfer.WriteXML([]byte("<agent_data/>\n"), "agent-123", stagingDir)
+	// Using the default staging directory (os.TempDir(), usually /tmp)
+	// and the default Pandora data_in directory.
+	file, err := ppttransfer.WriteXML([]byte("<agent_data/>\n"), "agent-123", "")
 	if err != nil {
 		panic(err)
 	}
 
 	if err := ppttransfer.Send(context.Background(), file, ppttransfer.Options{
-		Mode:    ppttransfer.ModeLocal,
-		DataDir: inboxDir,
+		Mode: ppttransfer.ModeLocal,
 	}); err != nil {
 		panic(err)
 	}
 
-	fmt.Println(filepath.Join(inboxDir, filepath.Base(file)))
+	fmt.Println(filepath.Join("/var/spool/pandora/data_in", filepath.Base(file)))
 }

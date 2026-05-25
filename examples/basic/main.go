@@ -3,73 +3,63 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
+	"log"
 
 	pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
 	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
+	pptoutput "github.com/pandorafms/pandoraplugintools-go/pkg/output"
 	ppttransfer "github.com/pandorafms/pandoraplugintools-go/pkg/transfer"
+	pptutil "github.com/pandorafms/pandoraplugintools-go/pkg/util"
 )
 
 func main() {
+	serverName := "WIN-SERV"
+
 	ag, err := pptagent.New(pptagent.Config{
-		AgentName:   "agent-123",
-		AgentAlias:  "WIN-SERV",
+		AgentName:   pptutil.GenerateMD5(serverName),
+		AgentAlias:  serverName,
 		Description: "Default Windows server",
+		OSName:      pptutil.GetOS(),
+		Timestamp:   pptutil.Now(),
 	})
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	cpu, err := pptmodule.New(pptmodule.Config{
-		Name:                 "CPU usage",
-		Type:                 "generic_data",
-		Value:                "10",
-		Description:          "Percentage of CPU utilization",
-		Unit:                 "%",
-		ModuleGroup:          "system",
-		MinWarning:           "60",
-		MaxCritical:          "95",
-		Status:               "normal",
-		CustomID:             "cpu-usage",
-		CriticalInstructions: "Check sustained CPU pressure",
-		AlertTemplates:       []string{"cpu-warning", "cpu-critical"},
+		Name:  "CPU usage",
+		Type:  "generic_data",
+		Value: "10",
+		Desc:  "Percentage of CPU utilization",
+		Unit:  "%",
 	})
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	if err := ag.AddModule(cpu); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	xmlData, err := ag.XML()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	stagingDir, err := os.MkdirTemp("", "ppt-go-staging-")
+	file, err := ppttransfer.WriteXML(xmlData, ag.Config.AgentName, "")
 	if err != nil {
-		panic(err)
-	}
-	defer os.RemoveAll(stagingDir)
-
-	inboxDir, err := os.MkdirTemp("", "ppt-go-inbox-")
-	if err != nil {
-		panic(err)
-	}
-	defer os.RemoveAll(inboxDir)
-
-	file, err := ppttransfer.WriteXML(xmlData, ag.Config.AgentName, stagingDir)
-	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	fmt.Println(file)
+	fmt.Printf("%s\n", xmlData)
+
+	pptoutput.PrintStdout("Written: %s", file)
 
 	if err := ppttransfer.Send(context.Background(), file, ppttransfer.Options{
-		Mode:    ppttransfer.ModeLocal,
-		DataDir: inboxDir,
+		Mode:    ppttransfer.ModeTentacle,
+		Address: "localhost",
+		Port:    41121,
 	}); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

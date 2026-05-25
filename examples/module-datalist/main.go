@@ -11,7 +11,7 @@ func main() {
 		Name: "Process count",
 		Type: "generic_data",
 		DataList: []pptmodule.DataPoint{
-			{Value: "10", Timestamp: "2026-05-22T10:00:00Z"},
+			{Value: "10", Timestamp: "2026/05/22 10:00:00"},
 			{Value: "12"},
 		},
 	})

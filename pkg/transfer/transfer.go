@@ -2,8 +2,6 @@ package transfer
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +11,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	pptutil "github.com/pandorafms/pandoraplugintools-go/pkg/util"
 )
 
 // Mode selects the transport mode used by Send.
@@ -27,6 +27,9 @@ const (
 
 const defaultTentacleBinary = "tentacle_client"
 const defaultTentaclePort = 41121
+const defaultDataDir = "/var/spool/pandora/data_in"
+
+var defaultStagingDir = os.TempDir()
 
 // Options defines transfer behavior for Phase 1.
 type Options struct {
@@ -73,22 +76,24 @@ func WriteXML(content []byte, agentName string, dir string) (string, error) {
 	}
 
 	if strings.TrimSpace(dir) == "" {
-		dir = os.TempDir()
+		dir = defaultStagingDir
 	}
 
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
 
-	sum := md5.Sum([]byte(agentName))
-	name := hex.EncodeToString(sum[:])
+	name := pptutil.GenerateMD5(agentName)
 
 	for range 10 {
-		path := filepath.Join(dir, fmt.Sprintf("%s.%d.data", name, time.Now().UnixNano()))
+		path := filepath.Join(dir, fmt.Sprintf("%s.%d.data", name, time.Now().Unix()))
 
 		file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 		if err != nil {
 			if errors.Is(err, os.ErrExist) {
+				now := time.Now()
+				nextSecond := now.Truncate(time.Second).Add(time.Second)
+				time.Sleep(time.Until(nextSecond))
 				continue
 			}
 			return "", err
@@ -191,6 +196,10 @@ func normalize(o Options) Options {
 
 	if o.Port == 0 {
 		o.Port = defaultTentaclePort
+	}
+
+	if o.Mode == ModeLocal && strings.TrimSpace(o.DataDir) == "" {
+		o.DataDir = defaultDataDir
 	}
 
 	return o

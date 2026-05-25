@@ -4,9 +4,23 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"time"
 
 	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
 )
+
+const pandoraTimestampLayout = "2006/01/02 15:04:05"
+
+// normalizePandoraTimestamp converts an RFC3339 timestamp to the Pandora
+// server format (YYYY/MM/DD HH:MM:SS). If the input is not RFC3339 it is
+// returned unchanged so callers that already use the Pandora format work too.
+func normalizePandoraTimestamp(ts string) string {
+	t, err := time.Parse(time.RFC3339, ts)
+	if err != nil {
+		return ts
+	}
+	return t.Format(pandoraTimestampLayout)
+}
 
 // AgentData is the internal agent payload consumed by the XML encoder.
 type AgentData struct {
@@ -126,7 +140,7 @@ func Encode(agent AgentData, modules []pptmodule.Module, logModules []pptmodule.
 		Version:         agent.Version,
 		OSName:          agent.OSName,
 		OSVersion:       agent.OSVersion,
-		Timestamp:       agent.Timestamp,
+		Timestamp:       normalizePandoraTimestamp(agent.Timestamp),
 		Address:         agent.Address,
 		Group:           agent.Group,
 		Interval:        agent.Interval,
@@ -225,7 +239,7 @@ func dataList(points []pptmodule.DataPoint) *dataListXML {
 	for _, point := range points {
 		items = append(items, dataPointXML{
 			Value:     cdataText{Text: point.Value},
-			Timestamp: optionalCDATA(point.Timestamp),
+			Timestamp: optionalCDATA(normalizePandoraTimestamp(point.Timestamp)),
 		})
 	}
 

@@ -3,10 +3,10 @@ package agent
 import (
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/pandorafms/pandoraplugintools-go/internal/pandoraxml"
 	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
+	pptutil "github.com/pandorafms/pandoraplugintools-go/pkg/util"
 )
 
 const defaultInterval = 300
@@ -151,7 +151,7 @@ func applyDefaults(cfg Config) Config {
 	}
 
 	if strings.TrimSpace(cfg.Timestamp) == "" {
-		cfg.Timestamp = time.Now().UTC().Format(time.RFC3339)
+		cfg.Timestamp = pptutil.Now()
 	}
 
 	return cfg

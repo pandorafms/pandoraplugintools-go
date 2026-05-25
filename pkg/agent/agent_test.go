@@ -177,7 +177,7 @@ func TestAgentXMLWithOptionsIncludesDataListAndLogModules(t *testing.T) {
 	checks := []string{
 		"<datalist>",
 		"<value><![CDATA[10]]></value>",
-		"<timestamp><![CDATA[2026-05-22T10:00:00Z]]></timestamp>",
+		"<timestamp><![CDATA[2026/05/22 10:00:00]]></timestamp>",
 		"<value><![CDATA[12]]></value>",
 		"<log_module>",
 		"<source><![CDATA[application.log]]></source>",

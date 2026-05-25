@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -8,6 +9,9 @@ import (
 
 	pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
 	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
+	pptoutput "github.com/pandorafms/pandoraplugintools-go/pkg/output"
+	ppttransfer "github.com/pandorafms/pandoraplugintools-go/pkg/transfer"
+	pptutil "github.com/pandorafms/pandoraplugintools-go/pkg/util"
 )
 
 func main() {
@@ -19,6 +23,8 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "run":
+		runPlugin(os.Args[2:])
 	case "example-xml":
 		runExampleXML(os.Args[2:])
 	case "help", "-h", "--help":
@@ -29,11 +35,85 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Println("pandoraplugintools-go CLI scaffold")
+	fmt.Println("pandoraplugintools-go CLI")
 	fmt.Println()
 	fmt.Println("Available commands:")
-	fmt.Println("  example-xml   Render a sample Pandora XML payload using the library")
+	fmt.Println("  run           Run a plugin: create agent, add module, write XML, transfer")
+	fmt.Println("  example-xml   Render a sample Pandora XML payload")
 	fmt.Println("  help          Show this help")
+}
+
+func runPlugin(args []string) {
+	fs := flag.NewFlagSet("run", flag.ExitOnError)
+	agentAlias := fs.String("agent", "WIN-SERV", "Agent alias (name is MD5 of this)")
+	moduleName := fs.String("module", "CPU usage", "Module name")
+	moduleType := fs.String("type", "generic_data", "Module type")
+	moduleValue := fs.String("value", "10", "Module value")
+	moduleUnit := fs.String("unit", "%", "Module unit")
+	moduleDesc := fs.String("desc", "Percentage of CPU utilization", "Module description")
+	transferMode := fs.String("transfer", "local", "Transfer mode (local or tentacle)")
+	tentacleAddr := fs.String("address", "", "Tentacle server address (required for tentacle mode)")
+	tentaclePort := fs.Int("port", 41121, "Tentacle server port")
+	debug := fs.Bool("debug", false, "Enable debug output")
+	fs.Parse(args)
+
+	pptoutput.SetDebug(*debug)
+
+	ag, err := pptagent.New(pptagent.Config{
+		AgentName:   pptutil.GenerateMD5(*agentAlias),
+		AgentAlias:  *agentAlias,
+		Description: "Default " + *agentAlias + " server",
+		OSName:      pptutil.GetOS(),
+		Timestamp:   pptutil.Now(),
+	})
+	if err != nil {
+		pptoutput.PrintStderr("Agent creation failed: %v", err)
+		os.Exit(1)
+	}
+	pptoutput.PrintDebug("Agent created: %s", ag.Config.AgentName)
+
+	mod, err := pptmodule.New(pptmodule.Config{
+		Name:  *moduleName,
+		Type:  *moduleType,
+		Value: *moduleValue,
+		Desc:  *moduleDesc,
+		Unit:  *moduleUnit,
+	})
+	if err != nil {
+		pptoutput.PrintStderr("Module creation failed: %v", err)
+		os.Exit(1)
+	}
+
+	if err := ag.AddModule(mod); err != nil {
+		pptoutput.PrintStderr("Module add failed: %v", err)
+		os.Exit(1)
+	}
+
+	xmlData, err := ag.XML()
+	if err != nil {
+		pptoutput.PrintStderr("XML generation failed: %v", err)
+		os.Exit(1)
+	}
+	pptoutput.PrintDebug("XML generated (%d bytes)", len(xmlData))
+
+	file, err := ppttransfer.WriteXML(xmlData, ag.Config.AgentName, "")
+	if err != nil {
+		pptoutput.PrintStderr("Write XML failed: %v", err)
+		os.Exit(1)
+	}
+	pptoutput.PrintStdout("Written: %s", file)
+
+	opts := ppttransfer.Options{
+		Mode:    ppttransfer.Mode(*transferMode),
+		Address: *tentacleAddr,
+		Port:    *tentaclePort,
+	}
+
+	if err := ppttransfer.Send(context.Background(), file, opts); err != nil {
+		pptoutput.PrintStderr("Transfer failed: %v", err)
+		os.Exit(1)
+	}
+	pptoutput.PrintStdout("Transfer complete (%s)", *transferMode)
 }
 
 func runExampleXML(args []string) {

@@ -23,10 +23,24 @@ The repository includes runnable example files under `examples/`.
 
 - `examples/transfer-options-validate/main.go` — `(*ppttransfer.Options).Validate`
 - `examples/transfer-write-xml/main.go` — `ppttransfer.WriteXML`
-- `examples/transfer-send-local/main.go` — `ppttransfer.Send` in local mode
+- `examples/transfer-send-local/main.go` — `ppttransfer.Send` in local mode (default data_in)
+- `examples/transfer-send-local-custom/main.go` — `ppttransfer.Send` in local mode (custom directories)
 - `examples/transfer-send-tentacle/main.go` — `ppttransfer.Send` in Tentacle mode
+
+## Utility functions
+
+- `examples/util-generate-md5/main.go` — `pptutil.GenerateMD5`
+- `examples/util-get-os/main.go` — `pptutil.GetOS`
+- `examples/util-now/main.go` — `pptutil.Now`
+
+## Output functions
+
+- `examples/output-print-stdout/main.go` — `pptoutput.PrintStdout`
+- `examples/output-print-stderr/main.go` — `pptoutput.PrintStderr`
+- `examples/output-print-debug/main.go` — `pptoutput.PrintDebug` and `pptoutput.SetDebug`
 
 ## Notes
 
-- Public examples use the alias convention `pptagent`, `pptmodule`, and `ppttransfer`.
+- Public examples use the alias convention `pptagent`, `pptmodule`, `ppttransfer`, `pptutil`, and `pptoutput`.
 - The Tentacle example is designed to compile and illustrate usage even if `tentacle_client` is not installed locally.
+- Transfer defaults: staging uses `os.TempDir()` (usually `/tmp`), local mode data directory uses `/var/spool/pandora/data_in`.
