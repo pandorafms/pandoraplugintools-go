@@ -1,0 +1,20 @@
+# Binaries
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries and coverage
+*.test
+*.out
+coverage.out
+cover.out
+
+# IDE / OS
+.DS_Store
+
+# Local Pi runtime state
+.atl/
+.pi/
