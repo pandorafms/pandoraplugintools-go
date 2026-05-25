@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	pptagent "github.com/pandorafms/pandoraPlugintoolsGo/pkg/agent"
-	pptmodule "github.com/pandorafms/pandoraPlugintoolsGo/pkg/module"
-	ppttransfer "github.com/pandorafms/pandoraPlugintoolsGo/pkg/transfer"
+	pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
+	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
+	ppttransfer "github.com/pandorafms/pandoraplugintools-go/pkg/transfer"
 )
 
 func main() {

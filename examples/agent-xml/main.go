@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	pptagent "github.com/pandorafms/pandoraPlugintoolsGo/pkg/agent"
-	pptmodule "github.com/pandorafms/pandoraPlugintoolsGo/pkg/module"
+	pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
+	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
 )
 
 func main() {

@@ -3,7 +3,7 @@ package module_test
 import (
 	"testing"
 
-	pptmodule "github.com/pandorafms/pandoraPlugintoolsGo/pkg/module"
+	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
 )
 
 func TestNewAppliesDefaults(t *testing.T) {

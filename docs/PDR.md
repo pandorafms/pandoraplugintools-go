@@ -1,6 +1,6 @@
-# pandoraPlugintoolsGo PDR
+# pandoraplugintools-go PDR
 
-`pandoraPlugintoolsGo` will be a Go-first toolkit for Pandora FMS plugin development.
+`pandoraplugintools-go` will be a Go-first toolkit for Pandora FMS plugin development.
 
 The end state is two deliverables built from the same core:
 
@@ -84,7 +84,7 @@ The Go port should preserve the useful workflow, but not the Python surface shap
 A first-pass package layout:
 
 ```text
-pandoraPlugintoolsGo/
+pandoraplugintools-go/
   docs/
   cmd/ppt/
   pkg/agent/

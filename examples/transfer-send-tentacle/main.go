@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	ppttransfer "github.com/pandorafms/pandoraPlugintoolsGo/pkg/transfer"
+	ppttransfer "github.com/pandorafms/pandoraplugintools-go/pkg/transfer"
 )
 
 func main() {

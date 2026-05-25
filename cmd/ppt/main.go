@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	pptagent "github.com/pandorafms/pandoraPlugintoolsGo/pkg/agent"
-	pptmodule "github.com/pandorafms/pandoraPlugintoolsGo/pkg/module"
+	pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
+	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
 )
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Println("pandoraPlugintoolsGo CLI scaffold")
+	fmt.Println("pandoraplugintools-go CLI scaffold")
 	fmt.Println()
 	fmt.Println("Available commands:")
 	fmt.Println("  example-xml   Render a sample Pandora XML payload using the library")

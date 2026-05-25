@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	pptmodule "github.com/pandorafms/pandoraPlugintoolsGo/pkg/module"
+	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
 )
 
 func main() {

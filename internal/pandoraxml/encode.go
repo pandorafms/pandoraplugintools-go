@@ -5,7 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 
-	pptmodule "github.com/pandorafms/pandoraPlugintoolsGo/pkg/module"
+	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
 )
 
 // AgentData is the internal agent payload consumed by the XML encoder.

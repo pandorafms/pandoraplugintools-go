@@ -1,6 +1,6 @@
-# pandoraPlugintoolsGo
+# pandoraplugintools-go
 
-`pandoraPlugintoolsGo` is a Go-first toolkit for Pandora FMS plugin development.
+`pandoraplugintools-go` is a Go-first toolkit for Pandora FMS plugin development.
 
 The project is being built in layers:
 
@@ -37,9 +37,9 @@ Public-facing examples use explicit aliases for consistency:
 
 ```go
 import (
-    pptagent "github.com/pandorafms/pandoraPlugintoolsGo/pkg/agent"
-    pptmodule "github.com/pandorafms/pandoraPlugintoolsGo/pkg/module"
-    ppttransfer "github.com/pandorafms/pandoraPlugintoolsGo/pkg/transfer"
+    pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
+    pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
+    ppttransfer "github.com/pandorafms/pandoraplugintools-go/pkg/transfer"
 )
 ```
 

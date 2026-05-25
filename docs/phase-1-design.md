@@ -18,7 +18,7 @@ The CLI is intentionally present only as a thin placeholder in this phase. The l
 
 | Topic | Decision |
 |-------|----------|
-| Module path | `github.com/pandorafms/pandoraPlugintoolsGo` for the initial scaffold |
+| Module path | `github.com/pandorafms/pandoraplugintools-go` for the initial scaffold |
 | Public layout | Public packages under `pkg/`, XML encoder internals under `internal/` |
 | API shape | Typed configs, constructors, methods, and `error` returns |
 | XML strategy | Use `encoding/xml` with internal encoder types instead of manual string concatenation |
@@ -282,9 +282,9 @@ Phase 1 tests should cover four layers.
 
 ```go
 import (
-    pptagent "github.com/pandorafms/pandoraPlugintoolsGo/pkg/agent"
-    pptmodule "github.com/pandorafms/pandoraPlugintoolsGo/pkg/module"
-    ppttransfer "github.com/pandorafms/pandoraPlugintoolsGo/pkg/transfer"
+    pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
+    pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
+    ppttransfer "github.com/pandorafms/pandoraplugintools-go/pkg/transfer"
 )
 
 ag, err := pptagent.New(pptagent.Config{

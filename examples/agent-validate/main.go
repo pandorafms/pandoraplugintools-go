@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	pptagent "github.com/pandorafms/pandoraPlugintoolsGo/pkg/agent"
+	pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
 )
 
 func main() {

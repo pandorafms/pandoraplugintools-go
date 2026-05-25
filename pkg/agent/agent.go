@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pandorafms/pandoraPlugintoolsGo/internal/pandoraxml"
-	pptmodule "github.com/pandorafms/pandoraPlugintoolsGo/pkg/module"
+	"github.com/pandorafms/pandoraplugintools-go/internal/pandoraxml"
+	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
 )
 
 const defaultInterval = 300
