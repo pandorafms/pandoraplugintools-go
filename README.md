@@ -68,12 +68,3 @@ The repository includes dedicated runnable example files under `examples/`, incl
 
 For the full mapping from public functions to example files, see `docs/examples.md`.
 
-## Next steps
-
-With the basic agent/module surface nearly closed, the next major area is the real CLI workflow layer.
-
-See:
-
-- `docs/PDR.md`
-- `docs/phase-1-design.md`
-- `docs/examples.md`
