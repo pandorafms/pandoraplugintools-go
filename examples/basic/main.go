@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
 	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
@@ -155,4 +156,5 @@ func main() {
 	}); err != nil {
 		log.Fatal(err)
 	}
+	os.Remove(file)
 }

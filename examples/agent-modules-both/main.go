@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
 	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
-	pptoutput "github.com/pandorafms/pandoraplugintools-go/pkg/output"
 )
 
 func main() {
@@ -46,5 +46,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pptoutput.PrintStdout("%s", string(xmlData))
+	fmt.Print(string(xmlData))
 }

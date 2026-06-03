@@ -10,8 +10,7 @@ The repository includes runnable example files under `examples/`.
 - `examples/agent-validate/main.go` — `(*pptagent.Agent).Validate`
 - `examples/agent-xml/main.go` — `(*pptagent.Agent).XML`
 - `examples/agent-xml-with-options/main.go` — `(*pptagent.Agent).XMLWithOptions`
-- `examples/agent-modules-data/main.go` — `(*pptagent.Agent).ModulesXML` with data modules only
-- `examples/agent-modules-log/main.go` — `(*pptagent.Agent).ModulesXMLWithOptions` with log modules only
+- `examples/agent-xml-loop/main.go` — `(*pptagent.Agent).XML` with modules added in a loop
 - `examples/agent-modules-both/main.go` — `(*pptagent.Agent).ModulesXMLWithOptions` with data and log modules
 
 ## Module functions
@@ -19,8 +18,7 @@ The repository includes runnable example files under `examples/`.
 - `examples/module-new/main.go` — `pptmodule.New`
 - `examples/module-datalist/main.go` — `pptmodule.New` with `DataList`
 - `examples/module-new-log/main.go` — `pptmodule.NewLog`
-- `examples/module-xml-data/main.go` — `pptmodule.XML` with data modules only
-- `examples/module-xml-log/main.go` — `pptmodule.XMLWithOptions` with log modules only
+- `examples/module-xml-loop/main.go` — `pptmodule.XML` for multiple modules built in a loop
 - `examples/module-xml-both/main.go` — `pptmodule.XMLWithOptions` with data and log modules
 - `examples/module-validate/main.go` — `(*pptmodule.Module).Validate`
 - `examples/logmodule-validate/main.go` — `(*pptmodule.LogModule).Validate`
@@ -50,3 +48,4 @@ The repository includes runnable example files under `examples/`.
 - Public examples use the alias convention `pptagent`, `pptmodule`, `ppttransfer`, `pptutil`, and `pptoutput`.
 - The Tentacle example is designed to compile and illustrate usage even if `tentacle_client` is not installed locally.
 - Transfer defaults: staging uses `os.TempDir()` (usually `/tmp`), local mode data directory uses `/var/spool/pandora/data_in`.
+- For fragment-only XML, the `both` examples are the canonical reference. Use `nil` for the group you are not rendering: `pptmodule.XML(modules, nil)` for data-only, or `pptmodule.XMLWithOptions(nil, logModules, opts)` for log-only.

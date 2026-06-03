@@ -137,5 +137,11 @@ For agent-plugin flows that must print only module fragments to stdout, use
 If you do not need an agent object at all, use `pptmodule.XML()` to render
 module fragments directly from `pkg/module`.
 
-Dedicated examples are available for both styles with data-only, log-only, and
-mixed payloads under `examples/agent-modules-*` and `examples/module-xml-*`.
+Dedicated examples are available for both styles under
+`examples/agent-modules-both` and `examples/module-xml-both`.
+
+For data-only or log-only fragment output, use the same APIs and pass `nil` for
+the group you are not rendering.
+
+Loop-based examples are also available in `examples/agent-xml-loop` and
+`examples/module-xml-loop` for bulk generation scenarios.
