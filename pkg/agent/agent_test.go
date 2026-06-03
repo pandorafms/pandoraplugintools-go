@@ -1,6 +1,7 @@
 package agent_test
 
 import (
+	"encoding/xml"
 	"strings"
 	"testing"
 
@@ -193,5 +194,67 @@ func TestAgentXMLWithOptionsIncludesDataListAndLogModules(t *testing.T) {
 
 	if strings.Contains(xmlString, "<data><![CDATA[0]]></data>") {
 		t.Fatalf("did not expect scalar data node for datalist payload, got:\n%s", xmlString)
+	}
+}
+
+func TestAgentModulesXMLRendersOnlyModuleNodes(t *testing.T) {
+	ag, err := pptagent.New(pptagent.Config{AgentName: "agent-plugin", AgentAlias: "agent-plugin"})
+	if err != nil {
+		t.Fatalf("expected agent to be created, got error: %v", err)
+	}
+
+	mod, err := pptmodule.New(pptmodule.Config{
+		Name:        "CPU usage",
+		Type:        "generic_data",
+		Value:       "10",
+		Description: "CPU utilization percentage",
+	})
+	if err != nil {
+		t.Fatalf("expected module to be created, got error: %v", err)
+	}
+
+	logModule, err := pptmodule.NewLog(pptmodule.LogConfig{
+		Source: "application.log",
+		Value:  "Service restarted",
+	})
+	if err != nil {
+		t.Fatalf("expected log module to be created, got error: %v", err)
+	}
+
+	if err := ag.AddModule(mod); err != nil {
+		t.Fatalf("expected module to be added, got error: %v", err)
+	}
+
+	if err := ag.AddLogModule(logModule); err != nil {
+		t.Fatalf("expected log module to be added, got error: %v", err)
+	}
+
+	xmlData, err := ag.ModulesXMLWithOptions(pptagent.XMLOptions{LogEncoding: "utf-8"})
+	if err != nil {
+		t.Fatalf("expected modules xml to be generated, got error: %v", err)
+	}
+
+	xmlString := string(xmlData)
+	checks := []string{
+		"<module>",
+		"<![CDATA[CPU usage]]>",
+		"<data><![CDATA[10]]></data>",
+		"<log_module>",
+		"<source><![CDATA[application.log]]></source>",
+		"<encoding>utf-8</encoding>",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(xmlString, check) {
+			t.Fatalf("expected XML to contain %q, got:\n%s", check, xmlString)
+		}
+	}
+
+	if strings.Contains(xmlString, "<agent_data") {
+		t.Fatalf("did not expect agent wrapper when rendering only modules, got:\n%s", xmlString)
+	}
+
+	if strings.Contains(xmlString, xml.Header) {
+		t.Fatalf("did not expect XML header when rendering only modules, got:\n%s", xmlString)
 	}
 }

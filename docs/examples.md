@@ -10,12 +10,18 @@ The repository includes runnable example files under `examples/`.
 - `examples/agent-validate/main.go` — `(*pptagent.Agent).Validate`
 - `examples/agent-xml/main.go` — `(*pptagent.Agent).XML`
 - `examples/agent-xml-with-options/main.go` — `(*pptagent.Agent).XMLWithOptions`
+- `examples/agent-modules-data/main.go` — `(*pptagent.Agent).ModulesXML` with data modules only
+- `examples/agent-modules-log/main.go` — `(*pptagent.Agent).ModulesXMLWithOptions` with log modules only
+- `examples/agent-modules-both/main.go` — `(*pptagent.Agent).ModulesXMLWithOptions` with data and log modules
 
 ## Module functions
 
 - `examples/module-new/main.go` — `pptmodule.New`
 - `examples/module-datalist/main.go` — `pptmodule.New` with `DataList`
 - `examples/module-new-log/main.go` — `pptmodule.NewLog`
+- `examples/module-xml-data/main.go` — `pptmodule.XML` with data modules only
+- `examples/module-xml-log/main.go` — `pptmodule.XMLWithOptions` with log modules only
+- `examples/module-xml-both/main.go` — `pptmodule.XMLWithOptions` with data and log modules
 - `examples/module-validate/main.go` — `(*pptmodule.Module).Validate`
 - `examples/logmodule-validate/main.go` — `(*pptmodule.LogModule).Validate`
 
