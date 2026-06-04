@@ -141,6 +141,25 @@ func (a *Agent) XMLWithOptions(opts XMLOptions) ([]byte, error) {
 	)
 }
 
+// ModulesXML serializes only the agent modules, which is useful for agent plugins
+// that render module fragments directly to stdout.
+func (a *Agent) ModulesXML() ([]byte, error) {
+	return a.ModulesXMLWithOptions(XMLOptions{})
+}
+
+// ModulesXMLWithOptions serializes only the attached module nodes.
+func (a *Agent) ModulesXMLWithOptions(opts XMLOptions) ([]byte, error) {
+	if err := a.Validate(); err != nil {
+		return nil, err
+	}
+
+	return pptmodule.XMLWithOptions(
+		a.Modules,
+		a.LogModules,
+		pptmodule.XMLOptions{LogEncoding: opts.LogEncoding},
+	)
+}
+
 func applyDefaults(cfg Config) Config {
 	if cfg.Interval == 0 {
 		cfg.Interval = defaultInterval

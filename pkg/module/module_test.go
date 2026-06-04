@@ -1,6 +1,8 @@
 package module_test
 
 import (
+	"encoding/xml"
+	"strings"
 	"testing"
 
 	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
@@ -83,5 +85,65 @@ func TestNewLogRequiresSource(t *testing.T) {
 func TestNewRequiresName(t *testing.T) {
 	if _, err := pptmodule.New(pptmodule.Config{}); err == nil {
 		t.Fatal("expected error for missing module name")
+	}
+}
+
+func TestXMLRendersModulesWithoutAgentWrapper(t *testing.T) {
+	mod, err := pptmodule.New(pptmodule.Config{
+		Name:        "CPU usage",
+		Type:        "generic_data",
+		Value:       "10",
+		Description: "CPU utilization percentage",
+	})
+	if err != nil {
+		t.Fatalf("expected module to be created, got error: %v", err)
+	}
+
+	logModule, err := pptmodule.NewLog(pptmodule.LogConfig{
+		Source: "application.log",
+		Value:  "Service restarted",
+	})
+	if err != nil {
+		t.Fatalf("expected log module to be created, got error: %v", err)
+	}
+
+	xmlData, err := pptmodule.XMLWithOptions(
+		[]pptmodule.Module{mod},
+		[]pptmodule.LogModule{logModule},
+		pptmodule.XMLOptions{LogEncoding: "utf-8"},
+	)
+	if err != nil {
+		t.Fatalf("expected module XML to be generated, got error: %v", err)
+	}
+
+	xmlString := string(xmlData)
+	checks := []string{
+		"<module>",
+		"<![CDATA[CPU usage]]>",
+		"<data><![CDATA[10]]></data>",
+		"<log_module>",
+		"<source><![CDATA[application.log]]></source>",
+		"<encoding>utf-8</encoding>",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(xmlString, check) {
+			t.Fatalf("expected XML to contain %q, got:\n%s", check, xmlString)
+		}
+	}
+
+	if strings.Contains(xmlString, "<agent_data") {
+		t.Fatalf("did not expect agent wrapper, got:\n%s", xmlString)
+	}
+
+	if strings.Contains(xmlString, xml.Header) {
+		t.Fatalf("did not expect XML header, got:\n%s", xmlString)
+	}
+}
+
+func TestXMLRejectsInvalidModules(t *testing.T) {
+	_, err := pptmodule.XML([]pptmodule.Module{{}}, nil)
+	if err == nil {
+		t.Fatal("expected error for invalid module XML payload")
 	}
 }

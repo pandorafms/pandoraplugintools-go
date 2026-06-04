@@ -75,6 +75,7 @@ type dataPointXML struct {
 }
 
 type moduleXML struct {
+	XMLName              xml.Name     `xml:"module"`
 	Name                 cdataText    `xml:"name"`
 	Type                 string       `xml:"type"`
 	Data                 *cdataText   `xml:"data,omitempty"`
@@ -125,6 +126,7 @@ type moduleXML struct {
 }
 
 type logModuleXML struct {
+	XMLName  xml.Name  `xml:"log_module"`
 	Source   cdataText `xml:"source"`
 	Data     string    `xml:"data"`
 	Encoding string    `xml:"encoding,omitempty"`
@@ -145,12 +147,27 @@ func Encode(agent AgentData, modules []pptmodule.Module, logModules []pptmodule.
 		Group:           agent.Group,
 		Interval:        agent.Interval,
 		AgentMode:       agent.AgentMode,
-		Modules:         make([]moduleXML, 0, len(modules)),
-		LogModules:      make([]logModuleXML, 0, len(logModules)),
+		Modules:         encodeModules(modules),
+		LogModules:      encodeLogModules(logModules, opts),
 	}
 
+	body, err := xml.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+	buf.WriteString(xml.Header)
+	buf.Write(body)
+	buf.WriteByte('\n')
+
+	return buf.Bytes(), nil
+}
+
+func encodeModules(modules []pptmodule.Module) []moduleXML {
+	encoded := make([]moduleXML, 0, len(modules))
 	for _, m := range modules {
-		payload.Modules = append(payload.Modules, moduleXML{
+		encoded = append(encoded, moduleXML{
 			Name:                 cdataText{Text: m.Config.Name},
 			Type:                 m.Config.Type,
 			Data:                 scalarData(m.Config.Value, m.Config.DataList),
@@ -201,25 +218,20 @@ func Encode(agent AgentData, modules []pptmodule.Module, logModules []pptmodule.
 		})
 	}
 
+	return encoded
+}
+
+func encodeLogModules(logModules []pptmodule.LogModule, opts EncodeOptions) []logModuleXML {
+	encoded := make([]logModuleXML, 0, len(logModules))
 	for _, m := range logModules {
-		payload.LogModules = append(payload.LogModules, logModuleXML{
+		encoded = append(encoded, logModuleXML{
 			Source:   cdataText{Text: m.Config.Source},
 			Data:     fmt.Sprintf("\"%s\"", m.Config.Value),
 			Encoding: opts.LogEncoding,
 		})
 	}
 
-	body, err := xml.MarshalIndent(payload, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-
-	var buf bytes.Buffer
-	buf.WriteString(xml.Header)
-	buf.Write(body)
-	buf.WriteByte('\n')
-
-	return buf.Bytes(), nil
+	return encoded
 }
 
 func scalarData(value string, points []pptmodule.DataPoint) *cdataText {

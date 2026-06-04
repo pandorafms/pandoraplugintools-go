@@ -130,3 +130,18 @@ This keeps examples and consumer code visually uniform across all public compone
 The repository includes dedicated runnable example files under `examples/`.
 
 For the full mapping from public functions to example files, see `docs/examples.md`.
+
+For agent-plugin flows that must print only module fragments to stdout, use
+`(*pptagent.Agent).ModulesXML()` instead of `(*pptagent.Agent).XML()`.
+
+If you do not need an agent object at all, use `pptmodule.XML()` to render
+module fragments directly from `pkg/module`.
+
+Dedicated examples are available for both styles under
+`examples/agent-modules-both` and `examples/module-xml-both`.
+
+For data-only or log-only fragment output, use the same APIs and pass `nil` for
+the group you are not rendering.
+
+Loop-based examples are also available in `examples/agent-xml-loop` and
+`examples/module-xml-loop` for bulk generation scenarios.
