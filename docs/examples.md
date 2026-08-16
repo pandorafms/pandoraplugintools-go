@@ -46,6 +46,11 @@ The repository includes runnable example files under `examples/`.
 - `examples/transfer-send-tentacle/main.go` — `ppttransfer.Send` in Tentacle mode
 - `examples/transfer-send-tentacle-retry/main.go` — `ppttransfer.Send` with `Options.Retries`
 
+## Monitoring API functions
+
+- `examples/monitoring-build-payload/main.go` — `pptmonitoring.AddItem` / `PayloadJSON` — build the JSON array accepted by the console API v2 `/monitoring` endpoint.
+- `examples/monitoring-send-payload/main.go` — same payload, then send it to `/monitoring` with `net/http` (dry run unless `PANDORA_MONITORING_URL` is set).
+
 ## Utility functions
 
 - `examples/util-generate-md5/main.go` — `pptutil.GenerateMD5`

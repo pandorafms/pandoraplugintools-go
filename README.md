@@ -103,6 +103,7 @@ cmd/ppt/              CLI entrypoint
 pkg/agent/            Agent model and orchestration
 pkg/module/           Module model and validation
 pkg/discovery/        Discovery plugin summary/info/monitoring_data payload
+pkg/monitoring/       Console API v2 "/monitoring" JSON payload builder
 pkg/transfer/         File writing and transport helpers
 pkg/util/             General-purpose helpers (MD5, OS detection, timestamp, parsing)
 pkg/output/           Output and logging helpers
@@ -119,6 +120,7 @@ import (
     pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
     pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
     pptdiscovery "github.com/pandorafms/pandoraplugintools-go/pkg/discovery"
+    pptmonitoring "github.com/pandorafms/pandoraplugintools-go/pkg/monitoring"
     ppttransfer "github.com/pandorafms/pandoraplugintools-go/pkg/transfer"
     pptutil "github.com/pandorafms/pandoraplugintools-go/pkg/util"
     pptoutput "github.com/pandorafms/pandoraplugintools-go/pkg/output"
