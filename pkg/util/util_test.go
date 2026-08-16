@@ -183,3 +183,53 @@ func TestTranslateMacrosAppliesInOrder(t *testing.T) {
 		t.Fatalf("expected ordered replacement to cascade, got %q", result)
 	}
 }
+
+func TestSafeInputEncodesSpecialCharacters(t *testing.T) {
+	// Cross-checked against pandoraPlugintoolsBasic's safe_input() output
+	// for the same input string.
+	got := pptutil.SafeInput("Hello \"World\" & <tag>")
+	want := "Hello&#x20;&quot;World&quot;&#x20;&amp;&#x20;&lt;tag&gt;"
+
+	if got != want {
+		t.Fatalf("expected %q, got %q", want, got)
+	}
+}
+
+func TestSafeInputLeavesUnmappedCharactersUnchanged(t *testing.T) {
+	got := pptutil.SafeInput("plain-text_123")
+	if got != "plain-text_123" {
+		t.Fatalf("expected unmapped characters to pass through unchanged, got %q", got)
+	}
+}
+
+func TestSafeOutputDecodesEntitiesBackToCharacters(t *testing.T) {
+	got := pptutil.SafeOutput("Hello&#x20;&quot;World&quot;&#x20;&amp;&#x20;&lt;tag&gt;")
+	want := "Hello \"World\" & <tag>"
+
+	if got != want {
+		t.Fatalf("expected %q, got %q", want, got)
+	}
+}
+
+func TestSafeInputSafeOutputRoundTrip(t *testing.T) {
+	sample := "Hello \"World\" & <tag> café niño €" + string(rune(1)) + string(rune(31)) + "\\"
+
+	encoded := pptutil.SafeInput(sample)
+	decoded := pptutil.SafeOutput(encoded)
+
+	if decoded != sample {
+		t.Fatalf("expected round trip to restore original string, got %q", decoded)
+	}
+}
+
+func TestSafeInputEmptyString(t *testing.T) {
+	if got := pptutil.SafeInput(""); got != "" {
+		t.Fatalf("expected empty string, got %q", got)
+	}
+}
+
+func TestSafeOutputEmptyString(t *testing.T) {
+	if got := pptutil.SafeOutput(""); got != "" {
+		t.Fatalf("expected empty string, got %q", got)
+	}
+}
