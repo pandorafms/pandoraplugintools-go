@@ -149,3 +149,28 @@ the group you are not rendering.
 
 Loop-based examples are also available in `examples/agent-xml-loop` and
 `examples/module-xml-loop` for bulk generation scenarios.
+
+## Releasing
+
+Go modules have no in-repo version field (no `setup.py`/`package.json`
+equivalent) — the version is entirely determined by git tags, which
+`go get`/the Go module proxy read directly from the repository.
+
+1. Land every change intended for the release on `main` first (merge all
+   open PRs). Never tag a commit that isn't on `main`.
+2. From an up-to-date `main`, confirm everything is green:
+   ```sh
+   git checkout main && git pull --ff-only
+   go build ./... && go vet ./... && go test ./...
+   ```
+3. Pick the next version following [semver](https://semver.org/):
+   bump major for breaking API changes, minor for backward-compatible
+   additions, patch for fixes only. Pre-1.0 (`v0.x.y`), minor bumps may
+   still contain breaking changes.
+4. Tag and push:
+   ```sh
+   git tag -a vX.Y.Z -m "vX.Y.Z"
+   git push origin vX.Y.Z
+   ```
+5. That's it — no build or publish step. `go get github.com/pandorafms/pandoraplugintools-go@vX.Y.Z`
+   (or `@latest`) picks it up directly from the pushed tag via the Go module proxy.
