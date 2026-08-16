@@ -51,6 +51,15 @@ The repository includes runnable example files under `examples/`.
 - `examples/util-generate-md5/main.go` — `pptutil.GenerateMD5`
 - `examples/util-get-os/main.go` — `pptutil.GetOS`
 - `examples/util-now/main.go` — `pptutil.Now`
+- `examples/util-encode-decode-string/main.go` — `pptutil.EncodeString` / `pptutil.DecodeString`
+- `examples/util-parse-int/main.go` — `pptutil.ParseInt`
+- `examples/util-parse-float/main.go` — `pptutil.ParseFloat`
+- `examples/util-parse-str/main.go` — `pptutil.ParseStr`
+- `examples/util-parse-bool/main.go` — `pptutil.ParseBool`
+- `examples/util-translate-macros/main.go` — `pptutil.TranslateMacros`
+- `examples/util-safe-input-output/main.go` — `pptutil.SafeInput` / `pptutil.SafeOutput`
+- `examples/util-parse-configuration/main.go` — `pptutil.ParseConfiguration`
+- `examples/util-parse-csv-file/main.go` — `pptutil.ParseCSVFile`
 
 ## Output functions
 
