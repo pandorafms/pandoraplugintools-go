@@ -1,6 +1,8 @@
 package util_test
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -231,5 +233,114 @@ func TestSafeInputEmptyString(t *testing.T) {
 func TestSafeOutputEmptyString(t *testing.T) {
 	if got := pptutil.SafeOutput(""); got != "" {
 		t.Fatalf("expected empty string, got %q", got)
+	}
+}
+
+func TestParseConfigurationParsesKeyValueLines(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "server.conf")
+	content := "# comment\n\nhost 10.0.0.1\nport 41121\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("failed to write config file: %v", err)
+	}
+
+	config := pptutil.ParseConfiguration(path, " ", nil)
+
+	if config["host"] != "10.0.0.1" {
+		t.Fatalf("expected host to be 10.0.0.1, got %q", config["host"])
+	}
+	if config["port"] != "41121" {
+		t.Fatalf("expected port to be 41121, got %q", config["port"])
+	}
+	if len(config) != 2 {
+		t.Fatalf("expected 2 entries (comment/blank skipped), got %v", config)
+	}
+}
+
+func TestParseConfigurationSkipsMalformedLinesIndividually(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "server.conf")
+	content := "host 10.0.0.1\nmalformed-line-without-separator\nport 41121\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("failed to write config file: %v", err)
+	}
+
+	config := pptutil.ParseConfiguration(path, " ", nil)
+
+	if config["host"] != "10.0.0.1" || config["port"] != "41121" {
+		t.Fatalf("expected parsing to continue past the malformed line, got %v", config)
+	}
+}
+
+func TestParseConfigurationFillsDefaults(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "server.conf")
+	if err := os.WriteFile(path, []byte("host 10.0.0.1\n"), 0o644); err != nil {
+		t.Fatalf("failed to write config file: %v", err)
+	}
+
+	config := pptutil.ParseConfiguration(path, " ", map[string]string{
+		"host": "should-not-override",
+		"port": "41121",
+	})
+
+	if config["host"] != "10.0.0.1" {
+		t.Fatalf("expected file value to win over default, got %q", config["host"])
+	}
+	if config["port"] != "41121" {
+		t.Fatalf("expected default to fill missing key, got %q", config["port"])
+	}
+}
+
+func TestParseConfigurationMissingFileLogsAndReturnsDefaults(t *testing.T) {
+	config := pptutil.ParseConfiguration(filepath.Join(t.TempDir(), "missing.conf"), " ", map[string]string{
+		"port": "41121",
+	})
+
+	if config["port"] != "41121" {
+		t.Fatalf("expected default to be applied despite missing file, got %v", config)
+	}
+}
+
+func TestParseCSVFileParsesLines(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "data.csv")
+	content := "# comment\n\nname;value;unit\ncpu;10;%\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("failed to write csv file: %v", err)
+	}
+
+	rows := pptutil.ParseCSVFile(path, ";", 0, false)
+
+	if len(rows) != 2 {
+		t.Fatalf("expected 2 rows, got %v", rows)
+	}
+	if rows[1][0] != "cpu" || rows[1][1] != "10" || rows[1][2] != "%" {
+		t.Fatalf("unexpected row: %v", rows[1])
+	}
+}
+
+func TestParseCSVFileDropsRowsBelowMinParameters(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "data.csv")
+	if err := os.WriteFile(path, []byte("cpu;10\nmem;20;%\n"), 0o644); err != nil {
+		t.Fatalf("failed to write csv file: %v", err)
+	}
+
+	rows := pptutil.ParseCSVFile(path, ";", 3, false)
+
+	if len(rows) != 1 {
+		t.Fatalf("expected only the row with 3 fields to survive, got %v", rows)
+	}
+	if rows[0][0] != "mem" {
+		t.Fatalf("unexpected surviving row: %v", rows[0])
+	}
+}
+
+func TestParseCSVFileMissingFileReturnsEmpty(t *testing.T) {
+	rows := pptutil.ParseCSVFile(filepath.Join(t.TempDir(), "missing.csv"), ";", 0, false)
+
+	if len(rows) != 0 {
+		t.Fatalf("expected empty result for missing file, got %v", rows)
 	}
 }

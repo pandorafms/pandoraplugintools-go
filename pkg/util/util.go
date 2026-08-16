@@ -5,10 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
+
+	pptoutput "github.com/pandorafms/pandoraplugintools-go/pkg/output"
 )
 
 func GenerateMD5(s string) string {
@@ -137,6 +140,89 @@ func ParseBool(v any) bool {
 	default:
 		return true
 	}
+}
+
+// ParseConfiguration parses a "key<separator>value" file into a map, skipping
+// blank lines and lines starting with "#". defaultValues fills in any key not
+// present in the file. Ports general.py's parse_configuration; unlike the
+// Python source it does not abort at the first malformed line (Python's
+// unguarded tuple-unpack raises and aborts the whole parse on a line missing
+// the separator) — each malformed line is skipped independently instead,
+// since parsing the rest of a config file is more useful than silently
+// dropping it. A file read error is logged via output.PrintStderr and
+// parsing proceeds with an empty config, same as the Python source. There is
+// no default file path (Python defaults to
+// "/etc/pandora/pandora_server.conf"); callers must pass one explicitly.
+func ParseConfiguration(file string, separator string, defaultValues map[string]string) map[string]string {
+	if separator == "" {
+		separator = " "
+	}
+
+	config := map[string]string{}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		pptoutput.PrintStderr("%s", err.Error())
+	} else {
+		for _, line := range strings.Split(string(data), "\n") {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+				continue
+			}
+
+			parts := strings.SplitN(trimmed, separator, 2)
+			if len(parts) != 2 {
+				continue
+			}
+
+			config[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+		}
+	}
+
+	for option, value := range defaultValues {
+		opt := strings.TrimSpace(option)
+		if _, ok := config[opt]; !ok {
+			config[opt] = strings.TrimSpace(value)
+		}
+	}
+
+	return config
+}
+
+// ParseCSVFile parses a CSV file into a slice of field slices, skipping
+// blank lines and lines starting with "#". A line producing fewer than
+// countParameters fields is dropped, optionally logging it via
+// output.PrintStderr when printErrors is true. Ports general.py's
+// parse_csv_file. A file read error is logged via output.PrintStderr and an
+// empty slice is returned, same as the Python source.
+func ParseCSVFile(file string, separator string, countParameters int, printErrors bool) [][]string {
+	if separator == "" {
+		separator = ";"
+	}
+
+	result := [][]string{}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		pptoutput.PrintStderr("%s", err.Error())
+		return result
+	}
+
+	for _, line := range strings.Split(string(data), "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+
+		values := strings.Split(trimmed, separator)
+		if len(values) >= countParameters {
+			result = append(result, values)
+		} else if printErrors {
+			pptoutput.PrintStderr("Csv line: %s does not match minimum parameter defined: %d", line, countParameters)
+		}
+	}
+
+	return result
 }
 
 // MacroReplacement is an ordered macro-name/value pair for TranslateMacros.
