@@ -30,6 +30,60 @@ func TestSetSummaryValueSetsKey(t *testing.T) {
 	}
 }
 
+func TestAddSummaryValueSetsWhenMissing(t *testing.T) {
+	d := pptdiscovery.New()
+
+	if err := d.AddSummaryValue("total agents", 1); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if d.Summary["total agents"] != 1 {
+		t.Fatalf("expected total agents to be 1, got %v", d.Summary["total agents"])
+	}
+}
+
+func TestAddSummaryValueAccumulatesByType(t *testing.T) {
+	cases := []struct {
+		name     string
+		first    any
+		second   any
+		expected any
+	}{
+		{"int", 1, 2, 3},
+		{"float64", 1.5, 2.5, 4.0},
+		{"string", "a", "b", "ab"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			d := pptdiscovery.New()
+
+			if err := d.AddSummaryValue("key", tc.first); err != nil {
+				t.Fatalf("unexpected error on first add: %v", err)
+			}
+			if err := d.AddSummaryValue("key", tc.second); err != nil {
+				t.Fatalf("unexpected error on second add: %v", err)
+			}
+
+			if d.Summary["key"] != tc.expected {
+				t.Fatalf("expected %v, got %v", tc.expected, d.Summary["key"])
+			}
+		})
+	}
+}
+
+func TestAddSummaryValueRejectsTypeMismatch(t *testing.T) {
+	d := pptdiscovery.New()
+
+	if err := d.AddSummaryValue("key", 1); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := d.AddSummaryValue("key", "not an int"); err == nil {
+		t.Fatalf("expected error on type mismatch, got nil")
+	}
+}
+
 func TestSetErrorLevel(t *testing.T) {
 	d := pptdiscovery.New()
 
