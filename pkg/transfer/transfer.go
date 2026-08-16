@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	pptoutput "github.com/pandorafms/pandoraplugintools-go/pkg/output"
 	pptutil "github.com/pandorafms/pandoraplugintools-go/pkg/util"
 )
 
@@ -40,6 +41,10 @@ type Options struct {
 	ExtraArgs       []string
 	DataDir         string
 	RemoveOnSuccess bool
+	// Retries is the number of additional attempts after the first failed
+	// tentacle send (tentacle mode only). Zero means a single attempt, ported
+	// from discovery.py's tentacle_xml(retry=False) default.
+	Retries int
 }
 
 // Validate verifies the options for the selected mode.
@@ -53,6 +58,9 @@ func (o Options) Validate() error {
 		}
 		if normalized.Port <= 0 {
 			return errors.New("tentacle port must be positive")
+		}
+		if normalized.Retries < 0 {
+			return errors.New("retries must not be negative")
 		}
 	case ModeLocal:
 		if strings.TrimSpace(normalized.DataDir) == "" {
@@ -137,10 +145,30 @@ func Send(ctx context.Context, file string, opts Options) error {
 		args = append(args, normalized.ExtraArgs...)
 		args = append(args, file)
 
-		cmd := exec.CommandContext(ctx, normalized.TentacleBinary, args...)
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			return fmt.Errorf("tentacle send failed: %w: %s", err, strings.TrimSpace(string(output)))
+		attempts := 1 + normalized.Retries
+
+		var lastErr error
+		for attempt := 1; attempt <= attempts; attempt++ {
+			cmd := exec.CommandContext(ctx, normalized.TentacleBinary, args...)
+			output, err := cmd.CombinedOutput()
+			if err == nil {
+				lastErr = nil
+				break
+			}
+
+			lastErr = fmt.Errorf("tentacle send failed (attempt %d/%d): %w: %s", attempt, attempts, err, strings.TrimSpace(string(output)))
+
+			if attempt < attempts {
+				pptoutput.PrintStderr("%s", lastErr.Error())
+			}
+
+			if ctx.Err() != nil {
+				break
+			}
+		}
+
+		if lastErr != nil {
+			return lastErr
 		}
 
 		if normalized.RemoveOnSuccess {

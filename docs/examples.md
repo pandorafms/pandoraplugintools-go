@@ -41,6 +41,7 @@ The repository includes runnable example files under `examples/`.
 - `examples/transfer-send-local/main.go` — `ppttransfer.Send` in local mode (default data_in)
 - `examples/transfer-send-local-custom/main.go` — `ppttransfer.Send` in local mode (custom directories)
 - `examples/transfer-send-tentacle/main.go` — `ppttransfer.Send` in Tentacle mode
+- `examples/transfer-send-tentacle-retry/main.go` — `ppttransfer.Send` with `Options.Retries`
 
 ## Utility functions
 
