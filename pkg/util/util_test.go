@@ -54,3 +54,132 @@ func TestNowWithInvalidTimezoneUsesLocal(t *testing.T) {
 		t.Fatalf("expected Pandora timestamp even with bad timezone, got %q: %v", ts, err)
 	}
 }
+
+func TestEncodeDecodeStringRoundTrip(t *testing.T) {
+	encoded := pptutil.EncodeString("hello world")
+	if encoded == "hello world" {
+		t.Fatalf("expected encoded string to differ from input")
+	}
+
+	decoded, err := pptutil.DecodeString(encoded)
+	if err != nil {
+		t.Fatalf("unexpected error decoding: %v", err)
+	}
+
+	if decoded != "hello world" {
+		t.Fatalf("expected round trip to restore original string, got %q", decoded)
+	}
+}
+
+func TestDecodeStringRejectsInvalidInput(t *testing.T) {
+	if _, err := pptutil.DecodeString("not-valid-base64!!"); err == nil {
+		t.Fatal("expected error decoding invalid base64")
+	}
+}
+
+func TestParseInt(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    any
+		expected int
+	}{
+		{"int", 42, 42},
+		{"float64", 3.9, 3},
+		{"true", true, 1},
+		{"false", false, 0},
+		{"numeric string", " 42 ", 42},
+		{"invalid string", "not a number", 0},
+		{"nil", nil, 0},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := pptutil.ParseInt(tc.input); got != tc.expected {
+				t.Fatalf("expected %d, got %d", tc.expected, got)
+			}
+		})
+	}
+}
+
+func TestParseFloat(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    any
+		expected float64
+	}{
+		{"float64", 3.5, 3.5},
+		{"int", 4, 4.0},
+		{"numeric string", "2.5", 2.5},
+		{"invalid string", "nope", 0},
+		{"nil", nil, 0},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := pptutil.ParseFloat(tc.input); got != tc.expected {
+				t.Fatalf("expected %v, got %v", tc.expected, got)
+			}
+		})
+	}
+}
+
+func TestParseStr(t *testing.T) {
+	if got := pptutil.ParseStr("already a string"); got != "already a string" {
+		t.Fatalf("expected passthrough for string input, got %q", got)
+	}
+
+	if got := pptutil.ParseStr(nil); got != "" {
+		t.Fatalf("expected empty string for nil input, got %q", got)
+	}
+
+	if got := pptutil.ParseStr(42); got != "42" {
+		t.Fatalf("expected \"42\", got %q", got)
+	}
+}
+
+func TestParseBool(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    any
+		expected bool
+	}{
+		{"nil", nil, false},
+		{"zero int", 0, false},
+		{"nonzero int", 5, true},
+		{"empty string", "", false},
+		{"non-empty string is truthy even if it says false", "false", true},
+		{"true bool", true, true},
+		{"false bool", false, false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := pptutil.ParseBool(tc.input); got != tc.expected {
+				t.Fatalf("expected %v, got %v", tc.expected, got)
+			}
+		})
+	}
+}
+
+func TestTranslateMacros(t *testing.T) {
+	result := pptutil.TranslateMacros([]pptutil.MacroReplacement{
+		{Name: "_host_", Value: "server1"},
+		{Name: "_ip_", Value: "10.0.0.1"},
+	}, "Host _host_ has IP _ip_")
+
+	if result != "Host server1 has IP 10.0.0.1" {
+		t.Fatalf("unexpected result: %q", result)
+	}
+}
+
+func TestTranslateMacrosAppliesInOrder(t *testing.T) {
+	// Later replacements must not re-match text introduced by earlier ones.
+	result := pptutil.TranslateMacros([]pptutil.MacroReplacement{
+		{Name: "_a_", Value: "_b_"},
+		{Name: "_b_", Value: "final"},
+	}, "_a_")
+
+	if result != "final" {
+		t.Fatalf("expected ordered replacement to cascade, got %q", result)
+	}
+}
