@@ -5,11 +5,9 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
 	pptdiscovery "github.com/pandorafms/pandoraplugintools-go/pkg/discovery"
@@ -161,35 +159,19 @@ func buildAgentXML(s scenario) (string, error) {
 		}
 	}
 
+	for _, m := range s.ImageModules {
+		mod, err := pptmodule.New(toModuleConfig(m))
+		if err != nil {
+			return "", fmt.Errorf("image module.New: %w", err)
+		}
+		if err := a.AddImageModule(mod); err != nil {
+			return "", fmt.Errorf("AddImageModule: %w", err)
+		}
+	}
+
 	body, err := a.XMLWithOptions(pptagent.XMLOptions{LogEncoding: s.LogEncoding})
 	if err != nil {
 		return "", fmt.Errorf("Agent.XMLWithOptions: %w", err)
-	}
-
-	// pandoraplugintools-go's Agent has no native image-module support
-	// (a known gap versus the Python source's print_agent(image_modules=...)),
-	// so image module fragments are spliced in manually here to keep the
-	// parity comparison meaningful. This is harness-only glue, not a change
-	// to the public library API.
-	if len(s.ImageModules) > 0 {
-		var fragments bytes.Buffer
-		for _, m := range s.ImageModules {
-			mod, err := pptmodule.New(toModuleConfig(m))
-			if err != nil {
-				return "", fmt.Errorf("image module.New: %w", err)
-			}
-			imgXML, err := pptmodule.ImageXML(mod)
-			if err != nil {
-				return "", fmt.Errorf("ImageXML: %w", err)
-			}
-			fragments.Write(imgXML)
-			fragments.WriteByte('\n')
-		}
-
-		closing := "</agent_data>"
-		trimmed := strings.TrimRight(string(body), "\n")
-		trimmed = strings.TrimSuffix(trimmed, closing)
-		body = []byte(trimmed + fragments.String() + closing)
 	}
 
 	return string(body), nil

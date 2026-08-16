@@ -53,16 +53,14 @@ silently zeroed and most scenarios will fail.
   RFC3339 input and converts it to the Pandora format; Python passes
   whatever string it's given through unchanged. Fixtures use the Pandora
   format directly so this Go-only convenience isn't exercised here.
-- **Image modules on `Agent`**: `pandoraplugintools-go`'s `Agent` has no
-  native way to attach image modules to a full agent XML document (unlike
-  Python's `print_agent(image_modules=...)`); `go_harness` splices
-  `pptmodule.ImageXML()` fragments into the document manually to keep the
-  comparison meaningful. This is a real API gap worth closing in a future
-  PR, tracked separately from this harness.
-
 ## Bugs found and fixed via this harness
 
 - Go emitted `<min>` before `<max>` for a module's plain threshold fields;
   Python emits `<max>` before `<min>` there (while using min-before-max for
   the warning/critical variants — an inconsistency in the Python source
   itself). Fixed in pandoraplugintools-go PR #11.
+- `Agent` had no native way to attach image modules to a full agent XML
+  document (unlike Python's `print_agent(image_modules=...)`); `go_harness`
+  originally worked around this by splicing `pptmodule.ImageXML()`
+  fragments into the document manually. Fixed properly in pandoraplugintools-go
+  PR #13 (`Agent.AddImageModule`), and `go_harness` now uses the native API.
