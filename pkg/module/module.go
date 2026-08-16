@@ -187,6 +187,22 @@ func XMLWithOptions(modules []Module, logModules []LogModule, opts XMLOptions) (
 	return buf.Bytes(), nil
 }
 
+const imageDataURIPrefix = "data:image/png;base64,"
+
+// ImageXML renders a single image module in XML format, prefixing Value with
+// a PNG data URI schema. Value is expected to already contain base64-encoded
+// image data. Ports discovery.py's print_img_module; unlike XML/XMLWithOptions
+// it only handles one module at a time and does not support DataList.
+func ImageXML(m Module) ([]byte, error) {
+	if err := m.Validate(); err != nil {
+		return nil, err
+	}
+
+	m.Config.Value = imageDataURIPrefix + m.Config.Value
+
+	return xml.MarshalIndent(moduleXMLPayload(m), "", "  ")
+}
+
 func applyDefaults(cfg Config) Config {
 	if strings.TrimSpace(cfg.Type) == "" {
 		cfg.Type = defaultType
