@@ -266,8 +266,8 @@ type moduleXML struct {
 	StrCriticalForced    *cdataText   `xml:"str_critical_forced,omitempty"`
 	CriticalInverse      *cdataText   `xml:"critical_inverse,omitempty"`
 	WarningInverse       *cdataText   `xml:"warning_inverse,omitempty"`
-	Min                  *cdataText   `xml:"min,omitempty"`
 	Max                  *cdataText   `xml:"max,omitempty"`
+	Min                  *cdataText   `xml:"min,omitempty"`
 	PostProcess          *cdataText   `xml:"post_process,omitempty"`
 	Disabled             *cdataText   `xml:"disabled,omitempty"`
 	MinFFEvent           *cdataText   `xml:"min_ff_event,omitempty"`
