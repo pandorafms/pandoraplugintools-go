@@ -1,6 +1,7 @@
 package discovery_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	pptdiscovery "github.com/pandorafms/pandoraplugintools-go/pkg/discovery"
@@ -124,5 +125,50 @@ func TestAddMonitoringDataAppends(t *testing.T) {
 
 	if len(d.MonitoringData) != 2 {
 		t.Fatalf("expected 2 monitoring entries, got %d", len(d.MonitoringData))
+	}
+}
+
+func TestOutputJSONOmitsEmptyFields(t *testing.T) {
+	d := pptdiscovery.New()
+
+	out, err := d.OutputJSON()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(out), &parsed); err != nil {
+		t.Fatalf("output is not valid JSON: %v", err)
+	}
+
+	if len(parsed) != 0 {
+		t.Fatalf("expected empty JSON object, got %v", parsed)
+	}
+}
+
+func TestOutputJSONIncludesPopulatedFields(t *testing.T) {
+	d := pptdiscovery.New()
+	d.SetSummaryValue("total agents", 2)
+	d.SetInfo("done")
+	d.AddMonitoringData(map[string]any{"module": "cpu"})
+
+	out, err := d.OutputJSON()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(out), &parsed); err != nil {
+		t.Fatalf("output is not valid JSON: %v", err)
+	}
+
+	if _, ok := parsed["summary"]; !ok {
+		t.Fatalf("expected summary key in output: %v", parsed)
+	}
+	if _, ok := parsed["info"]; !ok {
+		t.Fatalf("expected info key in output: %v", parsed)
+	}
+	if _, ok := parsed["monitoring_data"]; !ok {
+		t.Fatalf("expected monitoring_data key in output: %v", parsed)
 	}
 }
