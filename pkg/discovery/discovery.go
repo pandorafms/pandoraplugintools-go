@@ -3,7 +3,13 @@
 // and renders the final JSON payload consumed by the discovery server.
 package discovery
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+
+	pptoutput "github.com/pandorafms/pandoraplugintools-go/pkg/output"
+)
 
 // Discovery accumulates the state a discovery plugin reports back to the
 // Pandora FMS discovery server.
@@ -91,4 +97,42 @@ func (d *Discovery) SetMonitoringData(data []map[string]any) {
 // AddMonitoringData appends an entry to the monitoring data.
 func (d *Discovery) AddMonitoringData(data map[string]any) {
 	d.MonitoringData = append(d.MonitoringData, data)
+}
+
+// OutputJSON builds the JSON payload disco_output sends to the discovery
+// server. summary/info/monitoring_data are included only when non-empty.
+func (d *Discovery) OutputJSON() (string, error) {
+	out := map[string]any{}
+
+	if len(d.Summary) > 0 {
+		out["summary"] = d.Summary
+	}
+
+	if d.Info != "" {
+		out["info"] = d.Info
+	}
+
+	if len(d.MonitoringData) > 0 {
+		out["monitoring_data"] = d.MonitoringData
+	}
+
+	b, err := json.Marshal(out)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
+}
+
+// Output prints the JSON payload to stdout and exits the process with
+// ErrorLevel, mirroring disco_output().
+func (d *Discovery) Output() {
+	s, err := d.OutputJSON()
+	if err != nil {
+		pptoutput.PrintStderr("%v", err)
+		os.Exit(1)
+	}
+
+	pptoutput.PrintStdout("%s", s)
+	os.Exit(d.ErrorLevel)
 }
