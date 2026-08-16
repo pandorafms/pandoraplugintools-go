@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"bytes"
 	"errors"
 	"strings"
 
@@ -33,11 +34,13 @@ type XMLOptions struct {
 	LogEncoding string
 }
 
-// Agent aggregates configuration, standard modules, and log modules for XML generation.
+// Agent aggregates configuration, standard modules, log modules, and image
+// modules for XML generation.
 type Agent struct {
-	Config     Config
-	Modules    []pptmodule.Module
-	LogModules []pptmodule.LogModule
+	Config       Config
+	Modules      []pptmodule.Module
+	LogModules   []pptmodule.LogModule
+	ImageModules []pptmodule.Module
 }
 
 // New creates a new agent with Phase 1 defaults applied.
@@ -45,9 +48,10 @@ func New(cfg Config) (*Agent, error) {
 	cfg = applyDefaults(cfg)
 
 	a := &Agent{
-		Config:     cfg,
-		Modules:    []pptmodule.Module{},
-		LogModules: []pptmodule.LogModule{},
+		Config:       cfg,
+		Modules:      []pptmodule.Module{},
+		LogModules:   []pptmodule.LogModule{},
+		ImageModules: []pptmodule.Module{},
 	}
 	if err := a.Validate(); err != nil {
 		return nil, err
@@ -84,6 +88,22 @@ func (a *Agent) AddLogModule(m pptmodule.LogModule) error {
 	return nil
 }
 
+// AddImageModule validates and appends an image module to the agent. Value
+// is expected to already contain base64-encoded image data; it is rendered
+// with a PNG data URI prefix, same as (pptmodule.Module).ImageXML.
+func (a *Agent) AddImageModule(m pptmodule.Module) error {
+	if a == nil {
+		return errors.New("agent is nil")
+	}
+
+	if err := m.Validate(); err != nil {
+		return err
+	}
+
+	a.ImageModules = append(a.ImageModules, m)
+	return nil
+}
+
 // Validate verifies the minimum Phase 1 agent invariants.
 func (a *Agent) Validate() error {
 	if a == nil {
@@ -101,6 +121,12 @@ func (a *Agent) Validate() error {
 	}
 
 	for _, m := range a.LogModules {
+		if err := m.Validate(); err != nil {
+			return err
+		}
+	}
+
+	for _, m := range a.ImageModules {
 		if err := m.Validate(); err != nil {
 			return err
 		}
@@ -137,6 +163,7 @@ func (a *Agent) XMLWithOptions(opts XMLOptions) ([]byte, error) {
 		},
 		a.Modules,
 		a.LogModules,
+		a.ImageModules,
 		pandoraxml.EncodeOptions{LogEncoding: opts.LogEncoding},
 	)
 }
@@ -147,17 +174,40 @@ func (a *Agent) ModulesXML() ([]byte, error) {
 	return a.ModulesXMLWithOptions(XMLOptions{})
 }
 
-// ModulesXMLWithOptions serializes only the attached module nodes.
+// ModulesXMLWithOptions serializes only the attached module nodes, including
+// image modules (rendered via (pptmodule.Module).ImageXML) after regular and
+// log modules, matching XMLWithOptions' element order.
 func (a *Agent) ModulesXMLWithOptions(opts XMLOptions) ([]byte, error) {
 	if err := a.Validate(); err != nil {
 		return nil, err
 	}
 
-	return pptmodule.XMLWithOptions(
+	body, err := pptmodule.XMLWithOptions(
 		a.Modules,
 		a.LogModules,
 		pptmodule.XMLOptions{LogEncoding: opts.LogEncoding},
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(a.ImageModules) == 0 {
+		return body, nil
+	}
+
+	var buf bytes.Buffer
+	buf.Write(body)
+
+	for _, m := range a.ImageModules {
+		imgXML, err := pptmodule.ImageXML(m)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(imgXML)
+		buf.WriteByte('\n')
+	}
+
+	return buf.Bytes(), nil
 }
 
 func applyDefaults(cfg Config) Config {

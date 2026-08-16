@@ -133,7 +133,7 @@ type logModuleXML struct {
 }
 
 // Encode converts the public model into Pandora XML.
-func Encode(agent AgentData, modules []pptmodule.Module, logModules []pptmodule.LogModule, opts EncodeOptions) ([]byte, error) {
+func Encode(agent AgentData, modules []pptmodule.Module, logModules []pptmodule.LogModule, imageModules []pptmodule.Module, opts EncodeOptions) ([]byte, error) {
 	payload := agentXML{
 		AgentName:       agent.AgentName,
 		AgentAlias:      agent.AgentAlias,
@@ -156,11 +156,43 @@ func Encode(agent AgentData, modules []pptmodule.Module, logModules []pptmodule.
 		return nil, err
 	}
 
+	// encoding/xml rejects two struct fields sharing the same tag name, so
+	// image modules (rendered after regular and log modules, matching
+	// Python's print_agent(image_modules=...) order) are spliced in as
+	// their own marshaled fragments rather than a third same-tagged field.
+	if len(imageModules) > 0 {
+		imgFragments, err := marshalImageModules(imageModules)
+		if err != nil {
+			return nil, err
+		}
+
+		closing := []byte("</agent_data>")
+		trimmed := bytes.TrimSuffix(body, closing)
+		if !bytes.HasSuffix(trimmed, []byte("\n")) {
+			trimmed = append(trimmed, '\n')
+		}
+		body = append(trimmed, imgFragments...)
+		body = append(body, closing...)
+	}
+
 	var buf bytes.Buffer
 	buf.WriteString(xml.Header)
 	buf.Write(body)
 	buf.WriteByte('\n')
 
+	return buf.Bytes(), nil
+}
+
+func marshalImageModules(modules []pptmodule.Module) ([]byte, error) {
+	var buf bytes.Buffer
+	for _, m := range encodeImageModules(modules) {
+		b, err := xml.MarshalIndent(m, "  ", "  ")
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(b)
+		buf.WriteByte('\n')
+	}
 	return buf.Bytes(), nil
 }
 
@@ -219,6 +251,22 @@ func encodeModules(modules []pptmodule.Module) []moduleXML {
 	}
 
 	return encoded
+}
+
+const imageDataURIPrefix = "data:image/png;base64,"
+
+// encodeImageModules renders image modules the same way as encodeModules,
+// prefixing Value with a PNG data URI schema first. Value is expected to
+// already contain base64-encoded image data. Mirrors pptmodule.ImageXML's
+// single-module rendering but for the full agent_data document, matching
+// Python's print_agent(image_modules=...).
+func encodeImageModules(modules []pptmodule.Module) []moduleXML {
+	prefixed := make([]pptmodule.Module, len(modules))
+	for i, m := range modules {
+		m.Config.Value = imageDataURIPrefix + m.Config.Value
+		prefixed[i] = m
+	}
+	return encodeModules(prefixed)
 }
 
 func encodeLogModules(logModules []pptmodule.LogModule, opts EncodeOptions) []logModuleXML {
