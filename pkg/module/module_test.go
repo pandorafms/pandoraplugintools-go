@@ -147,3 +147,49 @@ func TestXMLRejectsInvalidModules(t *testing.T) {
 		t.Fatal("expected error for invalid module XML payload")
 	}
 }
+
+func TestImageXMLPrefixesDataURI(t *testing.T) {
+	mod, err := pptmodule.New(pptmodule.Config{
+		Name:  "Screenshot",
+		Value: "aGVsbG8=",
+	})
+	if err != nil {
+		t.Fatalf("expected module to be created, got error: %v", err)
+	}
+
+	body, err := pptmodule.ImageXML(mod)
+	if err != nil {
+		t.Fatalf("expected image XML to be generated, got error: %v", err)
+	}
+
+	xmlString := string(body)
+
+	if !strings.Contains(xmlString, "<data><![CDATA[data:image/png;base64,aGVsbG8=]]></data>") {
+		t.Fatalf("expected data URI prefix in image XML, got:\n%s", xmlString)
+	}
+}
+
+func TestImageXMLDoesNotMutateOriginalModule(t *testing.T) {
+	mod, err := pptmodule.New(pptmodule.Config{
+		Name:  "Screenshot",
+		Value: "aGVsbG8=",
+	})
+	if err != nil {
+		t.Fatalf("expected module to be created, got error: %v", err)
+	}
+
+	if _, err := pptmodule.ImageXML(mod); err != nil {
+		t.Fatalf("expected image XML to be generated, got error: %v", err)
+	}
+
+	if mod.Config.Value != "aGVsbG8=" {
+		t.Fatalf("expected original module Value to be unchanged, got %q", mod.Config.Value)
+	}
+}
+
+func TestImageXMLRejectsInvalidModule(t *testing.T) {
+	_, err := pptmodule.ImageXML(pptmodule.Module{})
+	if err == nil {
+		t.Fatal("expected error for invalid image module")
+	}
+}

@@ -258,3 +258,81 @@ func TestAgentModulesXMLRendersOnlyModuleNodes(t *testing.T) {
 		t.Fatalf("did not expect XML header when rendering only modules, got:\n%s", xmlString)
 	}
 }
+
+func TestAgentXMLIncludesImageModuleAfterLogModules(t *testing.T) {
+	ag, err := pptagent.New(pptagent.Config{AgentName: "srv-image"})
+	if err != nil {
+		t.Fatalf("expected agent to be created, got error: %v", err)
+	}
+
+	logModule, err := pptmodule.NewLog(pptmodule.LogConfig{Source: "application.log", Value: "log entry"})
+	if err != nil {
+		t.Fatalf("expected log module to be created, got error: %v", err)
+	}
+
+	imgModule, err := pptmodule.New(pptmodule.Config{Name: "Screenshot", Value: "aGVsbG8="})
+	if err != nil {
+		t.Fatalf("expected image module to be created, got error: %v", err)
+	}
+
+	if err := ag.AddLogModule(logModule); err != nil {
+		t.Fatalf("expected log module to be added, got error: %v", err)
+	}
+
+	if err := ag.AddImageModule(imgModule); err != nil {
+		t.Fatalf("expected image module to be added, got error: %v", err)
+	}
+
+	xmlData, err := ag.XML()
+	if err != nil {
+		t.Fatalf("expected xml to be generated, got error: %v", err)
+	}
+
+	xmlString := string(xmlData)
+
+	if !strings.Contains(xmlString, "data:image/png;base64,aGVsbG8=") {
+		t.Fatalf("expected image data URI in XML, got:\n%s", xmlString)
+	}
+
+	logIdx := strings.Index(xmlString, "<log_module>")
+	imgIdx := strings.Index(xmlString, "data:image/png;base64,")
+	if logIdx == -1 || imgIdx == -1 || imgIdx < logIdx {
+		t.Fatalf("expected image module to appear after log_module, got:\n%s", xmlString)
+	}
+}
+
+func TestAgentAddImageModuleRejectsInvalidModule(t *testing.T) {
+	ag, err := pptagent.New(pptagent.Config{AgentName: "srv-image"})
+	if err != nil {
+		t.Fatalf("expected agent to be created, got error: %v", err)
+	}
+
+	if err := ag.AddImageModule(pptmodule.Module{}); err == nil {
+		t.Fatal("expected error for invalid image module")
+	}
+}
+
+func TestAgentModulesXMLWithOptionsIncludesImageModule(t *testing.T) {
+	ag, err := pptagent.New(pptagent.Config{AgentName: "srv-image"})
+	if err != nil {
+		t.Fatalf("expected agent to be created, got error: %v", err)
+	}
+
+	imgModule, err := pptmodule.New(pptmodule.Config{Name: "Screenshot", Value: "aGVsbG8="})
+	if err != nil {
+		t.Fatalf("expected image module to be created, got error: %v", err)
+	}
+
+	if err := ag.AddImageModule(imgModule); err != nil {
+		t.Fatalf("expected image module to be added, got error: %v", err)
+	}
+
+	xmlData, err := ag.ModulesXML()
+	if err != nil {
+		t.Fatalf("expected modules xml to be generated, got error: %v", err)
+	}
+
+	if !strings.Contains(string(xmlData), "data:image/png;base64,aGVsbG8=") {
+		t.Fatalf("expected image data URI in fragment XML, got:\n%s", string(xmlData))
+	}
+}
