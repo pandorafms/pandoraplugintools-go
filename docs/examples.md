@@ -22,6 +22,7 @@ The repository includes runnable example files under `examples/`.
 - `examples/module-xml-both/main.go` — `pptmodule.XMLWithOptions` with data and log modules
 - `examples/module-validate/main.go` — `(*pptmodule.Module).Validate`
 - `examples/logmodule-validate/main.go` — `(*pptmodule.LogModule).Validate`
+- `examples/module-image/main.go` — `pptmodule.ImageXML`
 
 ## Transfer functions
 
