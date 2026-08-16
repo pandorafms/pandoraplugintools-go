@@ -13,6 +13,7 @@ The repository includes runnable example files under `examples/`.
 - `examples/agent-xml-loop/main.go` — `(*pptagent.Agent).XML` with modules added in a loop
 - `examples/agent-modules-both/main.go` — `(*pptagent.Agent).ModulesXMLWithOptions` with data and log modules
 - `examples/agent-add-image-module/main.go` — `(*pptagent.Agent).AddImageModule`
+- `examples/agent-modules-all/main.go` — `(*pptagent.Agent).ModulesXMLWithOptions` with data, log, and image modules together
 
 ## Module functions
 
@@ -47,7 +48,8 @@ The repository includes runnable example files under `examples/`.
 
 ## Notes
 
-- Public examples use the alias convention `pptagent`, `pptmodule`, `ppttransfer`, `pptutil`, and `pptoutput`.
+- Public examples use the alias convention `pptagent`, `pptmodule`, `pptdiscovery`, `ppttransfer`, `pptutil`, and `pptoutput`.
+- Image modules (`AddImageModule`/`ImageXML`) render after regular and log modules, matching Python's `print_agent(image_modules=...)` element order.
 - The Tentacle example is designed to compile and illustrate usage even if `tentacle_client` is not installed locally.
 - Transfer defaults: staging uses `os.TempDir()` (usually `/tmp`), local mode data directory uses `/var/spool/pandora/data_in`.
 - For fragment-only XML, the `both` examples are the canonical reference. Use `nil` for the group you are not rendering: `pptmodule.XML(modules, nil)` for data-only, or `pptmodule.XMLWithOptions(nil, logModules, opts)` for log-only.
