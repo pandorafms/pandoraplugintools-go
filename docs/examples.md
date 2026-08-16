@@ -13,6 +13,17 @@ The repository includes runnable example files under `examples/`.
 - `examples/agent-xml-loop/main.go` — `(*pptagent.Agent).XML` with modules added in a loop
 - `examples/agent-modules-both/main.go` — `(*pptagent.Agent).ModulesXMLWithOptions` with data and log modules
 
+## Discovery functions
+
+- `examples/discovery-new/main.go` — `pptdiscovery.New`
+- `examples/discovery-set-error-level/main.go` — `(*pptdiscovery.Discovery).SetErrorLevel`
+- `examples/discovery-set-summary/main.go` — `(*pptdiscovery.Discovery).SetSummary` / `SetSummaryValue`
+- `examples/discovery-add-summary-value/main.go` — `(*pptdiscovery.Discovery).AddSummaryValue`
+- `examples/discovery-info/main.go` — `(*pptdiscovery.Discovery).SetInfo` / `AddInfo`
+- `examples/discovery-monitoring-data/main.go` — `(*pptdiscovery.Discovery).SetMonitoringData` / `AddMonitoringData`
+- `examples/discovery-output-json/main.go` — `(*pptdiscovery.Discovery).OutputJSON`
+- `examples/discovery-output/main.go` — `(*pptdiscovery.Discovery).Output` (full plugin-style flow)
+
 ## Module functions
 
 - `examples/module-new/main.go` — `pptmodule.New`

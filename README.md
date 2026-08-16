@@ -102,8 +102,9 @@ ppt run --agent WIN-SERV --debug
 cmd/ppt/              CLI entrypoint
 pkg/agent/            Agent model and orchestration
 pkg/module/           Module model and validation
+pkg/discovery/        Discovery plugin summary/info/monitoring_data payload
 pkg/transfer/         File writing and transport helpers
-pkg/util/             General-purpose helpers (MD5, OS detection, timestamp)
+pkg/util/             General-purpose helpers (MD5, OS detection, timestamp, parsing)
 pkg/output/           Output and logging helpers
 internal/pandoraxml/  Internal XML encoder
 examples/             Dedicated examples for public functions and common flows
@@ -117,6 +118,7 @@ Public-facing examples use explicit aliases for consistency:
 import (
     pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
     pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
+    pptdiscovery "github.com/pandorafms/pandoraplugintools-go/pkg/discovery"
     ppttransfer "github.com/pandorafms/pandoraplugintools-go/pkg/transfer"
     pptutil "github.com/pandorafms/pandoraplugintools-go/pkg/util"
     pptoutput "github.com/pandorafms/pandoraplugintools-go/pkg/output"
