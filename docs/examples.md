@@ -33,6 +33,7 @@ The repository includes runnable example files under `examples/`.
 - `examples/module-xml-both/main.go` — `pptmodule.XMLWithOptions` with data and log modules
 - `examples/module-validate/main.go` — `(*pptmodule.Module).Validate`
 - `examples/logmodule-validate/main.go` — `(*pptmodule.LogModule).Validate`
+- `examples/module-image/main.go` — `pptmodule.ImageXML`
 
 ## Transfer functions
 
@@ -41,12 +42,22 @@ The repository includes runnable example files under `examples/`.
 - `examples/transfer-send-local/main.go` — `ppttransfer.Send` in local mode (default data_in)
 - `examples/transfer-send-local-custom/main.go` — `ppttransfer.Send` in local mode (custom directories)
 - `examples/transfer-send-tentacle/main.go` — `ppttransfer.Send` in Tentacle mode
+- `examples/transfer-send-tentacle-retry/main.go` — `ppttransfer.Send` with `Options.Retries`
 
 ## Utility functions
 
 - `examples/util-generate-md5/main.go` — `pptutil.GenerateMD5`
 - `examples/util-get-os/main.go` — `pptutil.GetOS`
 - `examples/util-now/main.go` — `pptutil.Now`
+- `examples/util-encode-decode-string/main.go` — `pptutil.EncodeString` / `pptutil.DecodeString`
+- `examples/util-parse-int/main.go` — `pptutil.ParseInt`
+- `examples/util-parse-float/main.go` — `pptutil.ParseFloat`
+- `examples/util-parse-str/main.go` — `pptutil.ParseStr`
+- `examples/util-parse-bool/main.go` — `pptutil.ParseBool`
+- `examples/util-translate-macros/main.go` — `pptutil.TranslateMacros`
+- `examples/util-safe-input-output/main.go` — `pptutil.SafeInput` / `pptutil.SafeOutput`
+- `examples/util-parse-configuration/main.go` — `pptutil.ParseConfiguration`
+- `examples/util-parse-csv-file/main.go` — `pptutil.ParseCSVFile`
 
 ## Output functions
 
