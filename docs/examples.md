@@ -12,6 +12,7 @@ The repository includes runnable example files under `examples/`.
 - `examples/agent-xml-with-options/main.go` — `(*pptagent.Agent).XMLWithOptions`
 - `examples/agent-xml-loop/main.go` — `(*pptagent.Agent).XML` with modules added in a loop
 - `examples/agent-modules-both/main.go` — `(*pptagent.Agent).ModulesXMLWithOptions` with data and log modules
+- `examples/agent-add-image-module/main.go` — `(*pptagent.Agent).AddImageModule`
 
 ## Discovery functions
 
