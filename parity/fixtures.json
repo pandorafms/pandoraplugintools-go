@@ -234,6 +234,86 @@
           {"module": "node-2", "status": "ok"}
         ]
       }
+    },
+    {
+      "name": "post-transforms-basic",
+      "agent": {
+        "agent_name": "srv-posttransform",
+        "timestamp": "2026/03/14 09:00:00"
+      },
+      "log_encoding": "",
+      "modules": [
+        {"name": "host cpu_percent", "type": "generic_data", "value": "55", "extra_data": "nginx:metric:cpu"},
+        {"name": "host disk_usage", "type": "generic_data", "value": "3"}
+      ],
+      "log_modules": [],
+      "image_modules": [],
+      "discovery": {
+        "monitoring_data_adds": [
+          {
+            "agent_data": {"agent_name": "srv-posttransform"},
+            "module_data": [
+              {"name": "host cpu_percent", "type": "generic_data", "value": "55", "extra_data": "nginx:metric:cpu"},
+              {"name": "host disk_usage", "type": "generic_data", "value": "3"}
+            ]
+          }
+        ]
+      },
+      "post_transforms": {
+        "rules": "transform_begin\ntransform_name       cpu thresholds\nmatch_module         .*cpu_percent\nmatch_extra_data     .*:metric:cpu\nset_min_warning      80\nset_max_critical     0\nset_module_group     Rendimiento\nset_tags             infra:cpu,team:ops\ntransform_end\n\ntransform_begin\ntransform_name       disk thresholds\nmatch_module         .*disk_usage\nset_min_warning      0.5\nset_str_warning      high usage\ntransform_end"
+      }
+    },
+    {
+      "name": "post-transforms-layered",
+      "agent": {
+        "agent_name": "srv-posttransform-layered",
+        "timestamp": "2026/03/15 09:00:00"
+      },
+      "log_encoding": "",
+      "modules": [
+        {"name": "node cpu_percent", "type": "generic_data", "value": "12", "extra_data": "nginx:metric:cpu"}
+      ],
+      "log_modules": [],
+      "image_modules": [],
+      "discovery": {
+        "monitoring_data_adds": [
+          {
+            "agent_data": {"agent_name": "srv-posttransform-layered"},
+            "module_data": [
+              {"name": "node cpu_percent", "type": "generic_data", "value": "12", "extra_data": "nginx:metric:cpu"}
+            ]
+          }
+        ]
+      },
+      "post_transforms": {
+        "rules": "transform_begin\ntransform_name       base group\nmatch_module         .*cpu\nset_min_warning      10\nset_module_group     Base\ntransform_end\n\ntransform_begin\ntransform_name       cpu override\nmatch_module         .*cpu_percent\nmatch_extra_data     .*:metric:cpu\nset_min_warning      20\nset_ff_timeout       30\nset_alert_template   Critical mail\ntransform_end"
+      }
+    },
+    {
+      "name": "post-transforms-partial-invalid",
+      "agent": {
+        "agent_name": "srv-posttransform-partial",
+        "timestamp": "2026/03/16 09:00:00"
+      },
+      "log_encoding": "",
+      "modules": [
+        {"name": "node cpu_percent", "type": "generic_data", "value": "12", "extra_data": "nginx:metric:cpu"}
+      ],
+      "log_modules": [],
+      "image_modules": [],
+      "discovery": {
+        "monitoring_data_adds": [
+          {
+            "agent_data": {"agent_name": "srv-posttransform-partial"},
+            "module_data": [
+              {"name": "node cpu_percent", "type": "generic_data", "value": "12", "extra_data": "nginx:metric:cpu"}
+            ]
+          }
+        ]
+      },
+      "post_transforms": {
+        "rules": "transform_begin\ntransform_name       good rule\nmatch_module         .*cpu_percent\nset_min_warning      25\ntransform_end\n\ntransform_begin\ntransform_name       typo rule\nmatch_module         .*cpu.*\nset_min_warnig       99\ntransform_end\n\ntransform_begin\ntransform_name       good rule two\nmatch_module         .*cpu_percent\nset_module_group     Application\ntransform_end"
+      }
     }
   ]
 }
