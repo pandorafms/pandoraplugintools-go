@@ -12,6 +12,7 @@ import (
 	pptagent "github.com/pandorafms/pandoraplugintools-go/pkg/agent"
 	pptdiscovery "github.com/pandorafms/pandoraplugintools-go/pkg/discovery"
 	pptmodule "github.com/pandorafms/pandoraplugintools-go/pkg/module"
+	pptposttransform "github.com/pandorafms/pandoraplugintools-go/pkg/posttransform"
 )
 
 type fixtureFile struct {
@@ -19,13 +20,18 @@ type fixtureFile struct {
 }
 
 type scenario struct {
-	Name         string          `json:"name"`
-	Agent        agentFixture    `json:"agent"`
-	LogEncoding  string          `json:"log_encoding"`
-	Modules      []moduleFixture `json:"modules"`
-	LogModules   []logFixture    `json:"log_modules"`
-	ImageModules []moduleFixture `json:"image_modules"`
-	Discovery    discoFixture    `json:"discovery"`
+	Name           string                `json:"name"`
+	Agent          agentFixture          `json:"agent"`
+	LogEncoding    string                `json:"log_encoding"`
+	Modules        []moduleFixture       `json:"modules"`
+	LogModules     []logFixture          `json:"log_modules"`
+	ImageModules   []moduleFixture       `json:"image_modules"`
+	Discovery      discoFixture          `json:"discovery"`
+	PostTransforms *postTransformFixture `json:"post_transforms"`
+}
+
+type postTransformFixture struct {
+	Rules string `json:"rules"`
 }
 
 type agentFixture struct {
@@ -88,9 +94,12 @@ type discoFixture struct {
 }
 
 type result struct {
-	Name          string `json:"name"`
-	AgentXML      string `json:"agent_xml"`
-	DiscoveryJSON any    `json:"discovery_json"`
+	Name                  string `json:"name"`
+	AgentXML              string `json:"agent_xml"`
+	DiscoveryJSON         any    `json:"discovery_json"`
+	ParsedRules           any    `json:"parsed_rules,omitempty"`
+	MonitoringItemsAfter  any    `json:"monitoring_items_after,omitempty"`
+	PostTransformErrorCnt any    `json:"post_transform_error_count,omitempty"`
 }
 
 func toModuleConfig(m moduleFixture) pptmodule.Config {
@@ -120,6 +129,14 @@ func toModuleConfig(m moduleFixture) pptmodule.Config {
 	return cfg
 }
 
+func parseScenarioRules(s scenario) ([]pptposttransform.Rule, []string) {
+	if s.PostTransforms == nil {
+		return nil, nil
+	}
+	// Tolerant parse: one bad rule is skipped, the good rules still apply.
+	return pptposttransform.ParseTransformBlocksTolerant(s.PostTransforms.Rules)
+}
+
 func buildAgentXML(s scenario) (string, error) {
 	a, err := pptagent.New(pptagent.Config{
 		AgentName:       s.Agent.AgentName,
@@ -139,11 +156,23 @@ func buildAgentXML(s scenario) (string, error) {
 		return "", fmt.Errorf("agent.New: %w", err)
 	}
 
+	modules := make([]pptmodule.Module, 0, len(s.Modules))
 	for _, m := range s.Modules {
 		mod, err := pptmodule.New(toModuleConfig(m))
 		if err != nil {
 			return "", fmt.Errorf("module.New: %w", err)
 		}
+		modules = append(modules, mod)
+	}
+
+	// Post-transforms run over the complete module list right before the
+	// final serialization (ticket #22040 XML path).
+	rules, _ := parseScenarioRules(s)
+	if rules != nil {
+		pptposttransform.ApplyToModules(modules, rules)
+	}
+
+	for _, mod := range modules {
 		if err := a.AddModule(mod); err != nil {
 			return "", fmt.Errorf("AddModule: %w", err)
 		}
@@ -199,7 +228,15 @@ func buildDiscoveryJSON(s scenario) (any, error) {
 		d.AddInfo(text)
 	}
 
-	for _, entry := range s.Discovery.MonitoringDataAdds {
+	// Post-transforms run over the accumulated monitoring items before
+	// OutputJSON serializes them (ticket #22040 discovery JSON path).
+	entries := s.Discovery.MonitoringDataAdds
+	rules, _ := parseScenarioRules(s)
+	if rules != nil {
+		pptposttransform.ApplyPostTransforms(entries, rules)
+	}
+
+	for _, entry := range entries {
 		d.AddMonitoringData(entry)
 	}
 
@@ -231,6 +268,90 @@ func normalizeJSONNumber(v any) any {
 	return f
 }
 
+// rawScenario mirrors the fixture JSON, keeping the raw agent/module maps
+// the Python harness also reads, so the monitoring items built for the
+// "/monitoring" path are identical on both sides.
+type rawScenario struct {
+	Name    string           `json:"name"`
+	Agent   map[string]any   `json:"agent"`
+	Modules []map[string]any `json:"modules"`
+}
+
+// translateRawModule applies the same fixture-to-library translation as the
+// Python harness's to_python_module_dict: alert_templates -> alert and
+// data_list -> the value list print_module detects as datalist mode.
+func translateRawModule(m map[string]any) map[string]any {
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+
+	if v, ok := out["alert_templates"]; ok {
+		delete(out, "alert_templates")
+		out["alert"] = v
+	}
+
+	if v, ok := out["data_list"]; ok {
+		delete(out, "data_list")
+		points, _ := v.([]any)
+		list := make([]any, 0, len(points))
+		for _, p := range points {
+			pm, _ := p.(map[string]any)
+			entry := map[string]any{"value": pm["value"]}
+			if ts, ok := pm["timestamp"]; ok {
+				if s, isStr := ts.(string); !isStr || s != "" {
+					entry["timestamp"] = ts
+				}
+			}
+			list = append(list, entry)
+		}
+		out["value"] = list
+	}
+
+	return out
+}
+
+// buildPostTransformOutputs returns the parsed rules (name/match/set, typed
+// values), the transformed monitoring items and the count of rule errors the
+// tolerant parser skipped (the error TEXT is per-language, so only the count
+// is compared), for scenarios that carry post_transforms; nil, nil, nil,
+// nil otherwise. This proves parser parity and the "/monitoring" JSON path
+// on top of the agent XML and discovery JSON paths already exercised by the
+// scenario itself.
+func buildPostTransformOutputs(s scenario, raw rawScenario) (any, any, any, error) {
+	if s.PostTransforms == nil {
+		return nil, nil, nil, nil
+	}
+
+	rules, ptErrs := parseScenarioRules(s)
+
+	modules := make([]map[string]any, 0, len(raw.Modules))
+	for _, m := range raw.Modules {
+		modules = append(modules, translateRawModule(m))
+	}
+	items := []map[string]any{{
+		"agent_data":  raw.Agent,
+		"module_data": modules,
+	}}
+	pptposttransform.ApplyPostTransforms(items, rules)
+
+	var parsedRules any
+	if b, err := json.Marshal(rules); err == nil {
+		if err := json.Unmarshal(b, &parsedRules); err != nil {
+			return nil, nil, nil, fmt.Errorf("unmarshal parsed rules: %w", err)
+		}
+	}
+
+	var itemsAfter any
+	if b, err := json.Marshal(items); err == nil {
+		if err := json.Unmarshal(b, &itemsAfter); err != nil {
+			return nil, nil, nil, fmt.Errorf("unmarshal monitoring items: %w", err)
+		}
+	}
+
+	return parsedRules, itemsAfter, len(ptErrs), nil
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, "usage: go_harness <fixtures.json>")
@@ -249,6 +370,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Shadow unmarshal keeping the raw agent/module maps, used by the
+	// post-transform "/monitoring" path so both harnesses build the items
+	// from the same JSON the fixture author wrote.
+	var rawFile struct {
+		Scenarios []rawScenario `json:"scenarios"`
+	}
+	if err := json.Unmarshal(data, &rawFile); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	rawByName := make(map[string]rawScenario, len(rawFile.Scenarios))
+	for _, rs := range rawFile.Scenarios {
+		rawByName[rs.Name] = rs
+	}
+
 	results := make([]result, 0, len(fixtures.Scenarios))
 	for _, s := range fixtures.Scenarios {
 		agentXML, err := buildAgentXML(s)
@@ -263,7 +399,20 @@ func main() {
 			os.Exit(1)
 		}
 
-		results = append(results, result{Name: s.Name, AgentXML: agentXML, DiscoveryJSON: discoJSON})
+		parsedRules, itemsAfter, ptErrCount, err := buildPostTransformOutputs(s, rawByName[s.Name])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "scenario %q: %v\n", s.Name, err)
+			os.Exit(1)
+		}
+
+		results = append(results, result{
+			Name:                  s.Name,
+			AgentXML:              agentXML,
+			DiscoveryJSON:         discoJSON,
+			ParsedRules:           parsedRules,
+			MonitoringItemsAfter:  itemsAfter,
+			PostTransformErrorCnt: ptErrCount,
+		})
 	}
 
 	out, err := json.Marshal(results)

@@ -104,12 +104,46 @@ pkg/agent/            Agent model and orchestration
 pkg/module/           Module model and validation
 pkg/discovery/        Discovery plugin summary/info/monitoring_data payload
 pkg/monitoring/       Console API v2 "/monitoring" JSON payload builder
+pkg/posttransform/    Post-transform block engine for Discovery tasks (regex rules merging whitelisted module fields before serialization)
 pkg/transfer/         File writing and transport helpers
 pkg/util/             General-purpose helpers (MD5, OS detection, timestamp, parsing)
 pkg/output/           Output and logging helpers
 internal/pandoraxml/  Internal XML encoder
+parity/               Python-vs-Go parity harness (fixtures + comparators)
 examples/             Dedicated examples for public functions and common flows
 ```
+
+## Post-transform blocks for Discovery tasks
+
+Discovery plugins can let task operators enrich modules without touching
+plugin code. Operators write ordered rule blocks in plain text; the plugin
+applies them right before serializing, so the same rules work for the XML
+(tentacle) path, the discovery JSON path and the `/monitoring` JSON path:
+
+```go
+// Tolerant parse: a bad rule is skipped and reported (block and line);
+// the valid rules still apply, so one bad rule never stops the run.
+rules, ruleErrors := pptposttransform.ParseTransformBlocksTolerant(rulesText)
+
+// XML path: over the module list, before rendering.
+pptposttransform.ApplyToModules(modules, rules)
+
+// JSON paths: over the monitoring items ([]map[string]any), before
+// Discovery.OutputJSON or monitoring.PayloadJSON.
+pptposttransform.ApplyPostTransforms(items, rules)
+```
+
+Report `ruleErrors` through the discovery info plus an error level (and
+stderr for manual runs). `ParseTransformBlocks` remains the strict variant
+for callers that want all-or-nothing validation.
+
+Grammar, whitelist, protected fields (`name`, `type`, `data`, `value`,
+`extra_data`, `timestamp`, `status`), AND-ed `match_module`/`match_extra_data`
+and last-match-wins-per-field semantics are shared with the Python engine
+(`pandoraPlugintoolsBasic.post_transforms`); rules must stay RE2-compatible
+(no backreferences or lookaround) so both engines behave identically. The
+`parity/` harness cross-checks the two implementations over the same
+fixtures.
 
 ## Import convention
 

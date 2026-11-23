@@ -175,6 +175,15 @@ def main():
 
         diffs.extend(compare_json(py_r["discovery_json"], go_r["discovery_json"]))
 
+        # Post-transform parity (ticket #22040): parsed rules, the
+        # transformed monitoring items, and how many rule errors the
+        # tolerant parser skipped (error TEXT is per-language, only the
+        # count is compared), present only in scenarios that carry
+        # post_transforms.
+        for key in ("parsed_rules", "monitoring_items_after", "post_transform_error_count"):
+            if key in py_r or key in go_r:
+                diffs.extend(compare_json(py_r.get(key), go_r.get(key), path=key))
+
         if diffs:
             print(f"FAIL {name}")
             for d in diffs:
